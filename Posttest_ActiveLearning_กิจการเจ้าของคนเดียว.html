@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Post-test Active Learning - ภารกิจเปิดกิจการบริการ</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,"Tahoma",sans-serif;background:#fff6fa;color:#4b3f49;padding:20px}
+.wrap{max-width:760px;margin:auto}
+.header{text-align:center;margin-bottom:18px}
+.badge{display:inline-block;background:#f7d9e6;color:#98486c;border-radius:30px;padding:7px 14px;font-size:13px;font-weight:bold}
+h1{font-size:30px;margin:10px 0 5px}
+.sub{color:#776b75;margin:0}
+.card{background:#fff;border:1px solid #eadfe5;border-radius:22px;padding:24px;box-shadow:0 8px 24px #5d435c14}
+.top{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:15px}
+.score{background:#fff0f6;color:#a04470;padding:8px 13px;border-radius:20px;font-weight:bold}
+.progress{height:9px;background:#eee8ec;border-radius:20px;overflow:hidden;margin-bottom:22px}
+.progress div{height:100%;background:#d77da5;width:20%;transition:.25s}
+h2{font-size:22px;margin:0 0 10px}
+.desc{line-height:1.6;color:#5f5560}
+.options{display:grid;gap:11px;margin-top:18px}
+.option{width:100%;padding:15px;border:2px solid #e7e0e5;border-radius:14px;background:#faf8fa;text-align:left;font-size:16px;font-weight:600;cursor:pointer}
+.option:hover{background:#fff1f6;border-color:#dfa0b9}
+.option.selected{background:#fce8f1;border-color:#cf6f9c}
+.option.correct{background:#e9f8ee;border-color:#83c99b}
+.option.wrong{background:#ffedf0;border-color:#e49aa3}
+.option:disabled{cursor:default}
+.feedback{min-height:28px;margin-top:14px;font-weight:bold}
+.next,.restart{width:100%;padding:14px;border:0;border-radius:14px;background:#514451;color:#fff;font-size:16px;font-weight:bold;margin-top:12px;cursor:pointer}
+.next:disabled{opacity:.4;cursor:not-allowed}
+.hidden{display:none}
+.result{text-align:center}
+.trophy{font-size:58px}
+.big{font-size:42px;color:#b44e7c;font-weight:900;margin:8px}
+.note{color:#756b75;line-height:1.6}
+@media(max-width:520px){body{padding:12px}h1{font-size:25px}.card{padding:18px}h2{font-size:19px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="header">
+<span class="badge">POST-TEST • ACTIVE LEARNING</span>
+<h1>🏪 ภารกิจเปิดกิจการบริการของฉัน</h1>
+<p class="sub">เรียนรู้ด้วยการเลือก • จัดหมวด • วางแผน • ตัดสินใจ</p>
+</div>
+
+<div class="card" id="main">
+<div class="top"><b id="stage">ภารกิจ 1 จาก 5</b><span class="score" id="score">คะแนน 0/10</span></div>
+<div class="progress"><div id="bar"></div></div>
+<div id="content"></div>
+<button class="next" id="next" disabled>ไปภารกิจถัดไป →</button>
+</div>
+
+<div class="card result hidden" id="result"></div>
+</div>
+
+<script>
+const missions=[
+{title:"🧩 ภารกิจ 1: เลือกธุรกิจของฉัน",desc:"คุณมีเงินทุน 10,000 บาท และต้องการเริ่มกิจการคนเดียว จงเลือกกิจการที่เป็น “ธุรกิจบริการ”",opts:["🍜 เปิดร้านอาหารขายอาหาร","💇 รับทำผมและแต่งหน้า","👕 รับซื้อเสื้อผ้ามาขาย","🏭 ผลิตกระเป๋าผ้า"],correct:1,points:2,type:"single"},
+{title:"🗂️ ภารกิจ 2: จัดหมวดธุรกิจ",desc:"จับคู่ลักษณะกับรูปแบบธุรกิจให้ถูกต้อง",pairs:[["มีเจ้าของ 1 คน",["กิจการเจ้าของคนเดียว","ห้างหุ้นส่วน","บริษัท"]],["มีหุ้นส่วน 2 คนขึ้นไป",["กิจการเจ้าของคนเดียว","ห้างหุ้นส่วน","บริษัท"]],["มีผู้ถือหุ้น",["กิจการเจ้าของคนเดียว","ห้างหุ้นส่วน","บริษัท"]]],answers:[0,1,2],points:2,type:"pairs"},
+{title:"🛠️ ภารกิจ 3: วางแผนก่อนเปิดร้าน",desc:"เลือก 3 สิ่งที่ควรทำก่อนเริ่มกิจการบริการจริง",opts:["สำรวจกลุ่มลูกค้า","คำนวณเงินทุนและค่าใช้จ่าย","เริ่มขายทันทีโดยไม่วางแผน","ศึกษากฎหมาย/การจดทะเบียนที่เกี่ยวข้อง","ซื้อของทุกอย่างก่อนรู้ความต้องการลูกค้า"],correct:[0,1,3],points:2,type:"multi"},
+{title:"💻 ภารกิจ 4: เปลี่ยนร้านให้เป็นออนไลน์",desc:"คุณเปิดกิจการรับออกแบบกราฟิกคนเดียว ข้อใดเป็นการนำธุรกิจบริการเข้าสู่ช่องทางออนไลน์อย่างเหมาะสม?",opts:["สร้างเพจเพื่อรับงานและติดต่อกับลูกค้า","ซื้อสินค้าไว้เต็มบ้าน","เปิดโรงงานผลิตสินค้า","รับผู้ถือหุ้นจำนวนมาก"],correct:0,points:2,type:"single"},
+{title:"🚨 ภารกิจ 5: เจอสถานการณ์จริง",desc:"หลังเปิดกิจการ มีรายได้ 15,000 บาท และมีค่าใช้จ่าย 9,000 บาท ข้อใดคือผลการดำเนินงาน?",opts:["มีกำไรสุทธิ 6,000 บาท","ขาดทุน 6,000 บาท","มีกำไร 24,000 บาท","คำนวณไม่ได้"],correct:0,points:2,type:"single"}
+];
+
+let current=0,total=0,locked=false;
+const content=document.getElementById("content"), next=document.getElementById("next");
+
+function updateTop(){
+ document.getElementById("stage").textContent="ภารกิจ "+(current+1)+" จาก 5";
+ document.getElementById("score").textContent="คะแนน "+total+"/10";
+ document.getElementById("bar").style.width=((current+1)*20)+"%";
+}
+
+function render(){
+ locked=false; next.disabled=true; next.textContent=current===4?"🏆 ดูผลคะแนน":"ไปภารกิจถัดไป →";
+ updateTop();
+ const m=missions[current];
+ content.innerHTML="<h2>"+m.title+"</h2><p class='desc'>"+m.desc+"</p><div class='options' id='options'></div><div class='feedback' id='feedback'></div>";
+ const box=document.getElementById("options");
+
+ if(m.type==="single"){
+   m.opts.forEach((text,i)=>{
+     const b=button(text);
+     b.onclick=()=>singleAnswer(i,b,m);
+     box.appendChild(b);
+   });
+ }else if(m.type==="multi"){
+   m.opts.forEach((text,i)=>{
+     const b=button("☐ "+text);
+     b.onclick=()=>multiAnswer(i,b,m);
+     box.appendChild(b);
+   });
+ }else{
+   m.pairs.forEach((pair,row)=>{
+     const label=document.createElement("div");
+     label.style.marginTop="8px";
+     label.innerHTML="<strong>"+pair[0]+"</strong>";
+     const select=document.createElement("select");
+     select.style.width="100%";select.style.padding="13px";select.style.marginTop="7px";select.style.borderRadius="12px";select.style.border="2px solid #e7e0e5";select.style.fontSize="15px";
+     select.innerHTML="<option value=''>-- เลือกคำตอบ --</option>"+pair[1].map((x,j)=>"<option value='"+j+"'>"+x+"</option>").join("");
+     select.dataset.row=row;
+     select.onchange=checkPairs;
+     label.appendChild(select);box.appendChild(label);
+   });
+ }
+}
+function button(text){const b=document.createElement("button");b.type="button";b.className="option";b.textContent=text;return b}
+function singleAnswer(i,b,m){
+ if(locked)return;locked=true;
+ [...document.querySelectorAll(".option")].forEach(x=>x.disabled=true);
+ if(i===m.correct){b.classList.add("correct");total+=m.points;feedback("🎉 ตัดสินใจถูกต้อง!","green");next.disabled=false}
+ else{b.classList.add("wrong");document.querySelectorAll(".option")[m.correct].classList.add("correct");feedback("💡 ลองทบทวนแนวคิดเรื่องธุรกิจบริการอีกครั้ง","red")}
+ updateTop();
+}
+function multiAnswer(i,b,m){
+ if(locked)return;
+ b.classList.toggle("selected");
+ const chosen=[...document.querySelectorAll(".option")].map((x,j)=>x.classList.contains("selected")?j:-1).filter(x=>x>=0);
+ if(chosen.length===3){
+   locked=true;
+   const ok=chosen.length===m.correct.length && chosen.every(x=>m.correct.includes(x));
+   if(ok){total+=m.points;feedback("🎉 วางแผนได้ถูกต้องครบ 3 ข้อ!","green");next.disabled=false}
+   else{feedback("💡 ยังไม่ถูกทั้งหมด ลองเลือกใหม่","red");locked=false}
+   if(ok)[...document.querySelectorAll(".option")].forEach(x=>x.disabled=true);
+   updateTop();
+ }
+}
+function checkPairs(){
+ const sels=[...document.querySelectorAll("select")];
+ if(sels.some(x=>x.value===""))return;
+ const ok=sels.every((x,i)=>Number(x.value)===missions[current].answers[i]);
+ if(ok){locked=true;total+=2;feedback("🎉 จัดหมวดถูกต้องครบทุกคู่!","green");sels.forEach(x=>x.disabled=true);next.disabled=false;updateTop()}
+ else feedback("💡 ยังไม่ถูก ลองจับคู่ใหม่อีกครั้ง","red");
+}
+function feedback(text,color){
+ const f=document.getElementById("feedback");f.textContent=text;f.style.color=color==="green"?"#28733f":"#a33b45";
+}
+next.onclick=()=>{
+ if(next.disabled)return;
+ if(current<4){current++;render()}else finish();
+};
+function finish(){
+ document.getElementById("main").classList.add("hidden");
+ const r=document.getElementById("result");r.classList.remove("hidden");
+ let level=total>=9?"🌟 วางแผนธุรกิจได้ดีมาก":total>=7?"👏 เข้าใจและประยุกต์ใช้ได้ดี":total>=5?"💗 เข้าใจพื้นฐานและควรฝึกเพิ่ม":"🌱 ควรทบทวนและลงมือฝึกอีกครั้ง";
+ r.innerHTML="<div class='trophy'>🏆</div><h2>ภารกิจสำเร็จ!</h2><div class='big'>"+total+" / 10 คะแนน</div><div><b>"+level+"</b></div><p class='note'>กิจกรรมนี้วัดการนำความรู้ไปใช้ผ่านการเลือก จัดหมวด วางแผน และแก้สถานการณ์</p><button class='restart' id='restart'>🔄 เริ่มภารกิจใหม่</button>";
+ document.getElementById("restart").onclick=()=>{current=0;total=0;r.classList.add("hidden");document.getElementById("main").classList.remove("hidden");render()};
+}
+render();
+</script>
+</body>
+</html>
